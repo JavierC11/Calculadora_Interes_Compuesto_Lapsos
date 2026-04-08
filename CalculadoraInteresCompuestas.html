@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora de Interés Compuesto Dinámica</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f4f7f6;
+            color: #333;
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 20px;
+        }
+
+        .card {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        }
+
+        h2 {
+            text-align: center;
+            color: #2c3e50;
+        }
+
+        label {
+            font-weight: bold;
+            display: block;
+            margin-top: 15px;
+            font-size: 14px;
+        }
+
+        input {
+            width: 100%;
+            padding: 10px;
+            margin-top: 5px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            box-sizing: border-box;
+        }
+
+        .period-box {
+            background: #f9f9f9;
+            padding: 15px;
+            border-left: 4px solid #3498db;
+            margin-top: 15px;
+            border-radius: 4px;
+        }
+
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            width: 100%;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 20px;
+            font-weight: bold;
+        }
+
+        button:hover {
+            background-color: #2980b9;
+        }
+
+        .btn-add {
+            background-color: #2ecc71;
+            width: auto;
+            padding: 8px 15px;
+            font-size: 14px;
+            margin-top: 15px;
+        }
+
+        .btn-add:hover {
+            background-color: #27ae60;
+        }
+
+        .result-container {
+            margin-top: 30px;
+            padding: 20px;
+            background: #e8f8f5;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .result-title {
+            font-size: 16px;
+            color: #16a085;
+        }
+
+        .result-value {
+            font-size: 32px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-top: 10px;
+        }
+
+        .chart-container {
+            margin-top: 30px;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            position: relative;
+            height: 450px;
+            width: 100%;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background: white;
+            font-size: 14px;
+        }
+
+        th,
+        td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: right;
+        }
+
+        th {
+            background-color: #3498db;
+            color: white;
+            text-align: center;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+
+        .btn-action {
+            width: auto;
+            padding: 10px 15px;
+            font-size: 14px;
+            margin-top: 15px;
+            margin-right: 10px;
+            display: inline-block;
+        }
+
+        .btn-remove {
+            background-color: #e74c3c;
+            width: auto;
+            padding: 6px 12px;
+            font-size: 12px;
+            margin-top: 10px;
+            display: block;
+        }
+
+        .btn-remove:hover {
+            background-color: #c0392b;
+        }
+
+        .milestone-badge {
+            background-color: #f1c40f;
+            color: #333;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: bold;
+            display: inline-block;
+        }
+    </style>
+    <!-- Incluir Chart.js y SheetJS para Excel -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+
+<body>
+
+    <div class="card">
+        <h2>Calculadora Dinámica</h2>
+
+        <label>Edad Actual</label>
+        <input type="number" id="current-age" value="25" min="0">
+
+        <label>Capital Inicial (Q o $)</label>
+        <input type="number" id="principal" value="0" min="0">
+
+        <label>Tasa de Interés Anual Estimada (%)</label>
+        <input type="number" id="rate" value="10" step="0.1">
+
+        <label>Tasa de Cambio Estimada (Q por 1 USD)</label>
+        <input type="number" id="exchange-rate" value="7.8" step="0.01">
+
+        <div id="periods-container">
+            <div class="period-box">
+                <label>Fase 1: Aporte Mensual</label>
+                <input type="number" class="contribution" value="8000">
+                <label>Duración (Años)</label>
+                <input type="number" class="years" value="2">
+            </div>
+        </div>
+
+        <button class="btn-add" onclick="addPeriod()">+ Agregar otra fase de años</button>
+
+        <div style="margin-top: 20px; display: flex; align-items: center;">
+            <input type="checkbox" id="auto-50" checked
+                style="width: auto; margin: 0; cursor: pointer; transform: scale(1.2);">
+            <label for="auto-50"
+                style="margin: 0 0 0 10px; cursor: pointer; display: inline; font-size: 14px;">Proyectar automáticamente
+                hasta mis 50 años</label>
+        </div>
+
+        <button onclick="calculate()">Calcular Crecimiento</button>
+
+        <div class="result-container" id="result-box" style="display:none;">
+            <div class="result-title">Balance Final Estimado</div>
+            <div class="result-value" id="final-balance">0.00</div>
+            <div style="margin-top: 10px; font-size: 14px; color: #555;">
+                Total de años: <span id="total-years" style="font-weight: bold;">0</span><br>
+                Total aportado: <span id="total-contributed">0.00</span><br>
+                Interés ganado: <span id="total-interest">0.00</span>
+            </div>
+
+            <div class="chart-container">
+                <canvas id="growthChart"></canvas>
+            </div>
+
+            <div style="text-align: center; margin-top: 20px;">
+                <button class="btn-action" style="background-color: #27ae60;" onclick="exportToExcel()">📥 Exportar a
+                    Excel</button>
+                <button class="btn-action" style="background-color: #f39c12;" onclick="toggleTable()">📊 Ver Tabla de
+                    Datos</button>
+            </div>
+
+            <div id="tableContainer" style="display:none; overflow-x: auto;">
+                <table id="dataTable">
+                    <thead>
+                        <tr>
+                            <th>Año (Progreso)</th>
+                            <th>Año Calendario</th>
+                            <th>Edad</th>
+                            <th>Aportes Totales</th>
+                            <th>Intereses Ganados</th>
+                            <th>Balance Final</th>
+                            <th style="text-align: center;">Hitos (USD)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let phaseCount = 1;
+        let chartInstance = null;
+        let globalYearlyData = [];
+
+        function addPeriod() {
+            phaseCount++;
+            const periodId = 'phase-' + phaseCount;
+            const container = document.getElementById('periods-container');
+            const newPeriod = document.createElement('div');
+            newPeriod.className = 'period-box';
+            newPeriod.id = periodId;
+            newPeriod.innerHTML = `
+            <label>Fase ${phaseCount}: Aporte Mensual</label>
+            <input type="number" class="contribution" value="6000">
+            <label>Duración (Años)</label>
+            <input type="number" class="years" value="2">
+            <button class="btn-action btn-remove" onclick="removePeriod('${periodId}')" type="button">🗑️ Eliminar Fase</button>
+        `;
+            container.appendChild(newPeriod);
+        }
+
+        function removePeriod(id) {
+            const period = document.getElementById(id);
+            if (period) {
+                period.remove();
+            }
+        }
+
+        function calculate() {
+            const currentAge = parseFloat(document.getElementById('current-age').value) || 0;
+            const principal = parseFloat(document.getElementById('principal').value) || 0;
+            const annualRate = parseFloat(document.getElementById('rate').value) || 0;
+            const exchangeRate = parseFloat(document.getElementById('exchange-rate').value) || 7.8;
+            const monthlyRate = (annualRate / 100) / 12;
+            const auto50 = document.getElementById('auto-50').checked;
+            const currentYear = new Date().getFullYear();
+
+            const periods = document.querySelectorAll('.period-box');
+            const milestonesUSD = [100000, 250000, 500000, 1000000, 2000000];
+            let achievedMilestones = new Set();
+
+            function checkMilestone(currentBalance) {
+                let milestoneReached = null;
+                let balanceUSD = currentBalance / exchangeRate;
+                for (let ms of milestonesUSD) {
+                    if (balanceUSD >= ms && !achievedMilestones.has(ms)) {
+                        achievedMilestones.add(ms);
+                        if (ms >= 1000000) {
+                            milestoneReached = `¡Llegó a $${(ms / 1000000)}M USD!`;
+                        } else {
+                            milestoneReached = `¡Llegó a $${(ms / 1000)}k USD!`;
+                        }
+                    }
+                }
+                return milestoneReached;
+            }
+
+            let balance = principal;
+            let totalContributions = principal;
+            let currentMonth = 0;
+            let totalYears = 0;
+            let lastContribution = 0;
+
+            globalYearlyData = [];
+            globalYearlyData.push({
+                numYear: 0,
+                calendarYear: currentYear,
+                age: currentAge,
+                balance: balance,
+                contributions: totalContributions,
+                milestone: checkMilestone(balance)
+            });
+
+            periods.forEach(period => {
+                const monthlyContribution = parseFloat(period.querySelector('.contribution').value) || 0;
+                lastContribution = monthlyContribution;
+                const years = parseFloat(period.querySelector('.years').value) || 0;
+                const months = Math.round(years * 12);
+
+                totalYears += years;
+
+                for (let i = 0; i < months; i++) {
+                    balance = (balance * (1 + monthlyRate)) + monthlyContribution;
+                    totalContributions += monthlyContribution;
+                    currentMonth++;
+
+                    if (currentMonth % 12 === 0) {
+                        const yearNum = currentMonth / 12;
+                        globalYearlyData.push({
+                            numYear: yearNum,
+                            calendarYear: currentYear + yearNum,
+                            age: currentAge + yearNum,
+                            balance: balance,
+                            contributions: totalContributions,
+                            milestone: checkMilestone(balance)
+                        });
+                    }
+                }
+            });
+
+            // Logica auto calcular hasta 50 años
+            if (auto50) {
+                const currentCalculatedAge = currentAge + (currentMonth / 12);
+                if (currentCalculatedAge < 50) {
+                    const remainingYears = 50 - currentCalculatedAge;
+                    const remainingMonths = Math.round(remainingYears * 12);
+                    totalYears += remainingYears;
+
+                    for (let i = 0; i < remainingMonths; i++) {
+                        balance = (balance * (1 + monthlyRate)) + lastContribution;
+                        totalContributions += lastContribution;
+                        currentMonth++;
+
+                        if (currentMonth % 12 === 0) {
+                            const yearNum = currentMonth / 12;
+                            globalYearlyData.push({
+                                numYear: yearNum,
+                                calendarYear: currentYear + yearNum,
+                                age: currentAge + yearNum,
+                                balance: balance,
+                                contributions: totalContributions,
+                                milestone: checkMilestone(balance)
+                            });
+                        }
+                    }
+                }
+            }
+
+            if (currentMonth % 12 !== 0 && currentMonth > 0) {
+                const yearNum = currentMonth / 12;
+                globalYearlyData.push({
+                    numYear: yearNum.toFixed(2),
+                    calendarYear: currentYear + Math.ceil(yearNum),
+                    age: parseFloat((currentAge + yearNum).toFixed(2)),
+                    balance: balance,
+                    contributions: totalContributions,
+                    milestone: checkMilestone(balance)
+                });
+            }
+
+            const totalInterest = balance - totalContributions;
+
+            document.getElementById('final-balance').innerText = new Intl.NumberFormat('es-GT', { style: 'currency', currency: 'GTQ' }).format(balance);
+            document.getElementById('total-contributed').innerText = new Intl.NumberFormat('es-GT', { style: 'currency', currency: 'GTQ' }).format(totalContributions);
+            document.getElementById('total-interest').innerText = new Intl.NumberFormat('es-GT', { style: 'currency', currency: 'GTQ' }).format(totalInterest);
+            document.getElementById('total-years').innerText = totalYears;
+
+            document.getElementById('result-box').style.display = 'block';
+
+            updateChart();
+            updateTable();
+        }
+
+        function updateChart() {
+            const ctx = document.getElementById('growthChart').getContext('2d');
+
+            if (chartInstance) {
+                chartInstance.destroy();
+            }
+
+            chartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: globalYearlyData.map(d => `Año ${d.numYear} (${d.calendarYear} - Edad ${d.age})`),
+                    datasets: [
+                        {
+                            label: 'Valor Futuro (Ahorros Totales)',
+                            data: globalYearlyData.map(d => d.balance),
+                            borderColor: '#c0392b',
+                            backgroundColor: '#c0392b',
+                            fill: false,
+                            tension: 0.1,
+                            pointRadius: globalYearlyData.map(d => d.milestone ? 8 : 4),
+                            pointBackgroundColor: globalYearlyData.map(d => d.milestone ? '#f1c40f' : '#c0392b'),
+                            pointBorderColor: globalYearlyData.map(d => d.milestone ? '#e67e22' : '#c0392b'),
+                            pointBorderWidth: globalYearlyData.map(d => d.milestone ? 3 : 1),
+                        },
+                        {
+                            label: 'Contribuciones Totales',
+                            data: globalYearlyData.map(d => d.contributions),
+                            borderColor: '#16a085',
+                            backgroundColor: '#16a085',
+                            fill: false,
+                            tension: 0.1,
+                            pointRadius: 4,
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function (context) {
+                                    let labelText = context.dataset.label + ': ' + new Intl.NumberFormat('es-GT', { style: 'currency', currency: 'GTQ' }).format(context.raw);
+                                    if (context.datasetIndex === 0 && globalYearlyData[context.dataIndex].milestone) {
+                                        labelText += ` - 🏆 ${globalYearlyData[context.dataIndex].milestone}`;
+                                    }
+                                    return labelText;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            ticks: {
+                                maxRotation: 45,
+                                minRotation: 45
+                            }
+                        },
+                        y: {
+                            ticks: {
+                                callback: function (value) {
+                                    return new Intl.NumberFormat('es-GT', { style: 'currency', currency: 'GTQ', maximumSignificantDigits: 3 }).format(value);
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateTable() {
+            const tbody = document.querySelector('#dataTable tbody');
+            tbody.innerHTML = '';
+
+            globalYearlyData.forEach(d => {
+                const tr = document.createElement('tr');
+                const rowInterest = parseFloat(d.balance) - parseFloat(d.contributions);
+                tr.innerHTML = `
+                    <td style="text-align: center;">${d.numYear}</td>
+                    <td style="text-align: center;">${d.calendarYear}</td>
+                    <td style="text-align: center;">${d.age}</td>
+                    <td>${new Intl.NumberFormat('es-GT', { style: 'currency', currency: 'GTQ' }).format(d.contributions)}</td>
+                    <td>${new Intl.NumberFormat('es-GT', { style: 'currency', currency: 'GTQ' }).format(rowInterest)}</td>
+                    <td>${new Intl.NumberFormat('es-GT', { style: 'currency', currency: 'GTQ' }).format(d.balance)}</td>
+                    <td style="text-align: center;">${d.milestone ? `<span class="milestone-badge">${d.milestone}</span>` : '-'}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function toggleTable() {
+            const tableContainer = document.getElementById('tableContainer');
+            if (tableContainer.style.display === 'none') {
+                tableContainer.style.display = 'block';
+            } else {
+                tableContainer.style.display = 'none';
+            }
+        }
+
+        function exportToExcel() {
+            const ws_data = [
+                ["Año (Progreso)", "Año Calendario", "Edad", "Aportes Totales (GTQ)", "Intereses Ganados (GTQ)", "Balance Final (GTQ)", "Hitos (USD)"]
+            ];
+
+            globalYearlyData.forEach(function (d) {
+                let interes = d.balance - d.contributions;
+                ws_data.push([
+                    d.numYear,
+                    d.calendarYear,
+                    d.age,
+                    parseFloat(d.contributions.toFixed(2)),
+                    parseFloat(interes.toFixed(2)),
+                    parseFloat(d.balance.toFixed(2)),
+                    d.milestone ? d.milestone : ""
+                ]);
+            });
+
+            const ws = XLSX.utils.aoa_to_sheet(ws_data);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Proyeccion");
+
+            XLSX.writeFile(wb, "proyeccion_interes_compuesto.xlsx");
+        }
+    </script>
+
+</body>
+
+</html>
